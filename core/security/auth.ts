@@ -26,7 +26,7 @@ export function generateToken(user: { id: string; email: string; role: string })
   };
   
   const secret = JWT_SECRET as string;
-  const options: jwt.SignOptions = { expiresIn: JWT_EXPIRES_IN };
+  const options: jwt.SignOptions = { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] };
   
   return jwt.sign(payload, secret, options);
 }

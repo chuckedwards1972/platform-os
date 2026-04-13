@@ -20,9 +20,8 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const server = http.createServer((req, res) => {
-    // Parse the URL so Next.js can route it correctly.
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
+    // Let Next.js handle URL parsing and routing
+    handle(req, res);
   });
 
   server.listen(port, hostname, () => {

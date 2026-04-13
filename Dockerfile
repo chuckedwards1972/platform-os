@@ -36,7 +36,8 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 # Copy only what Next.js needs to run in standalone/production mode.
-COPY --from=builder /app/public ./public
+# Note: /app/public is intentionally omitted — this project has no public/
+# directory, and Next.js treats it as optional.
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json

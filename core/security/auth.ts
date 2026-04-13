@@ -19,14 +19,17 @@ export interface JWTPayload {
 
 // Generate JWT token
 export function generateToken(user: { id: string; email: string; role: string }): string {
+  const secret = process.env.JWT_SECRET || 'fallback-secret';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  
   return jwt.sign(
     {
       userId: user.id,
       email: user.email,
       role: user.role
     },
-    process.env.JWT_SECRET || 'fallback-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    secret,
+    { expiresIn }
   );
 }
 
@@ -38,7 +41,8 @@ export function verifyToken(token: string): JWTPayload | null {
     // Remove "Bearer " prefix if present
     const cleanToken = token.replace('Bearer ', '');
     
-    const decoded = jwt.verify(cleanToken, JWT_SECRET) as JWTPayload;
+    const secret = process.env.JWT_SECRET || 'fallback-secret';
+    const decoded = jwt.verify(cleanToken, secret) as JWTPayload;
     return decoded;
   } catch (error) {
     console.error('Token verification failed:', error);

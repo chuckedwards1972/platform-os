@@ -89,7 +89,6 @@ export async function getPlatformTruth() {
       }),
       db.donation.findMany({ 
         where: { isActive: true },
-        include: { member: true },
         orderBy: { createdAt: 'desc' }
       }),
       db.meeting.findMany({ 

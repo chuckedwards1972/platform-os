@@ -28,8 +28,8 @@ export function generateToken(user: { id: string; email: string; role: string })
       email: user.email,
       role: user.role
     },
-    secret,
-    { expiresIn }
+    secret as string,
+    { expiresIn: expiresIn as string }
   );
 }
 

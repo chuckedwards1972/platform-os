@@ -3,13 +3,32 @@
 
 import { PrismaClient } from '@prisma/client';
 
-// Global Prisma instance to avoid multiple connections in development
+// Global Prisma instance to avoid multiple connections in development.
+// The client is stored here once created so it survives hot-reloads in dev.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const db = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+// Lazy initializer — creates the PrismaClient only on first access.
+// This prevents an eager connection attempt at module load time, which
+// would cause the app to time out during startup if the database isn't
+// immediately reachable.
+function getPrismaClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+  return globalForPrisma.prisma;
+}
+
+// Proxy that forwards every property access to the lazily-created client.
+// All existing call sites (db.user, db.session, db.$queryRaw, …) continue
+// to work without modification.
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return (getPrismaClient() as any)[prop];
+  },
 });
 
 // Connection health check
@@ -35,8 +54,7 @@ export async function getDatabaseMetrics() {
       grantCount,
       taskCount,
       missionCount,
-      userCount,
-      incidentCount
+      userCount
     ] = await Promise.all([
       db.member.count({ where: { isActive: true } }),
       db.housing.count({ where: { isActive: true } }),
@@ -46,8 +64,7 @@ export async function getDatabaseMetrics() {
       db.grant.count({ where: { isActive: true } }),
       db.task.count(),
       db.mission.count({ where: { isActive: true } }),
-      db.user.count({ where: { isActive: true } }),
-      db.incident.count({ where: { status: 'OPEN' } })
+      db.user.count({ where: { isActive: true } })
     ]);
 
     return {
@@ -60,7 +77,6 @@ export async function getDatabaseMetrics() {
       tasks: taskCount,
       missions: missionCount,
       users: userCount,
-      openIncidents: incidentCount,
       timestamp: new Date()
     };
   } catch (error) {
@@ -88,12 +104,10 @@ export async function getPlatformTruth() {
       }),
       db.housing.findMany({ 
         where: { isActive: true },
-        include: { residents: { include: { member: true } } },
         orderBy: { createdAt: 'desc' }
       }),
       db.donation.findMany({ 
         where: { isActive: true },
-        include: { member: true },
         orderBy: { createdAt: 'desc' }
       }),
       db.meeting.findMany({ 
@@ -182,14 +196,19 @@ export async function createAuditLog({
   }
 }
 
-// Graceful shutdown
+// Graceful shutdown — only disconnect if the client was ever instantiated.
+// Calling db.$disconnect() here would trigger the Proxy, which would call
+// getPrismaClient(), which would create a PrismaClient just to immediately
+// disconnect it. Guard against that so the health check route (and any
+// other route that doesn't touch the database) never causes an eager
+// Prisma connection attempt.
 process.on('beforeExit', async () => {
-  await db.$disconnect();
+  if (globalForPrisma.prisma) {
+    await globalForPrisma.prisma.$disconnect();
+  }
 });
 
-// In development, save to global to avoid hot-reload issues
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db;
-}
+// Note: globalForPrisma.prisma is populated by getPrismaClient() on first
+// access, so no explicit assignment is needed here.
 
 export default db;

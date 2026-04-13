@@ -47,10 +47,15 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+# Custom server — binds explicitly to HOSTNAME:PORT so the health-check probe
+# can reach the app from outside the container (next start ignores HOSTNAME).
+COPY --from=builder /app/server.js ./server.js
 # Prisma schema + generated client are embedded in node_modules, but copy the
 # schema so runtime migrations / introspection work if needed.
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+# Run the custom server directly with node rather than through npm so that
+# signals (SIGTERM, SIGINT) are delivered straight to the Node process.
+CMD ["node", "server.js"]

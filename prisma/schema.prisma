@@ -35,6 +35,19 @@ model Session {
   @@map("sessions")
 }
 
+// Audit logs for security and compliance
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  userId    String?
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
 // Core entities - matching your existing database
 model Member {
   id            String   @id @default(cuid())

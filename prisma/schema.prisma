@@ -37,13 +37,15 @@ model Session {
 
 // Audit logs for security and compliance
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  entity    String
-  entityId  String?
-  userId    String?
-  metadata  String?  // JSON string
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  action     String
+  entity     String
+  entityId   String?
+  userId     String?
+  oldValues  String?  // JSON string
+  newValues  String?  // JSON string
+  metadata   String?  // JSON string
+  createdAt  DateTime @default(now())
 
   @@map("audit_logs")
 }

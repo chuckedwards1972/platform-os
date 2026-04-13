@@ -196,9 +196,16 @@ export async function createAuditLog({
   }
 }
 
-// Graceful shutdown
+// Graceful shutdown — only disconnect if the client was ever instantiated.
+// Calling db.$disconnect() here would trigger the Proxy, which would call
+// getPrismaClient(), which would create a PrismaClient just to immediately
+// disconnect it. Guard against that so the health check route (and any
+// other route that doesn't touch the database) never causes an eager
+// Prisma connection attempt.
 process.on('beforeExit', async () => {
-  await db.$disconnect();
+  if (globalForPrisma.prisma) {
+    await globalForPrisma.prisma.$disconnect();
+  }
 });
 
 // Note: globalForPrisma.prisma is populated by getPrismaClient() on first

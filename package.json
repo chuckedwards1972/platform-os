@@ -1,7 +1,7 @@
 {
-  "name": "platform-os",
+  "name": "hope-platform-os",
   "version": "1.0.0",
-  "description": "Self-Maintaining Platform Architecture with Intelligence Layer",
+  "description": "HOPE Platform - Self-Maintaining Platform Architecture for Recovery Management",
   "private": true,
   "scripts": {
     "dev": "next dev",

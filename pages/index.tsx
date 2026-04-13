@@ -201,7 +201,7 @@ export default function PlatformCommandCenter() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Activity className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading Platform Command Center...</p>
+          <p className="text-gray-600">Loading HOPE Platform Command Center...</p>
         </div>
       </div>
     );
@@ -233,7 +233,7 @@ export default function PlatformCommandCenter() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               <Shield className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Platform Command Center</h1>
+              <h1 className="text-2xl font-bold text-gray-900">HOPE Platform Command Center</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">

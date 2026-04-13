@@ -1,4 +1,4 @@
-# Platform OS - Self-Maintaining Platform Architecture
+# HOPE Platform OS - Self-Maintaining Platform Architecture
 
 A production-ready **Self-Maintaining Platform Architecture (SMPA)** that implements:
 

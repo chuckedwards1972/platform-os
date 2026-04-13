@@ -3,13 +3,32 @@
 
 import { PrismaClient } from '@prisma/client';
 
-// Global Prisma instance to avoid multiple connections in development
+// Global Prisma instance to avoid multiple connections in development.
+// The client is stored here once created so it survives hot-reloads in dev.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const db = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+// Lazy initializer — creates the PrismaClient only on first access.
+// This prevents an eager connection attempt at module load time, which
+// would cause the app to time out during startup if the database isn't
+// immediately reachable.
+function getPrismaClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+  return globalForPrisma.prisma;
+}
+
+// Proxy that forwards every property access to the lazily-created client.
+// All existing call sites (db.user, db.session, db.$queryRaw, …) continue
+// to work without modification.
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return (getPrismaClient() as any)[prop];
+  },
 });
 
 // Connection health check
@@ -182,9 +201,7 @@ process.on('beforeExit', async () => {
   await db.$disconnect();
 });
 
-// In development, save to global to avoid hot-reload issues
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db;
-}
+// Note: globalForPrisma.prisma is populated by getPrismaClient() on first
+// access, so no explicit assignment is needed here.
 
 export default db;

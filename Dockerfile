@@ -38,7 +38,6 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 # Copy only what Next.js needs to run in standalone/production mode.
@@ -54,7 +53,7 @@ COPY --from=builder /app/server.js ./server.js
 # schema so runtime migrations / introspection work if needed.
 COPY --from=builder /app/prisma ./prisma
 
-EXPOSE 3000
+EXPOSE 8080
 
 # Run the custom server directly with node rather than through npm so that
 # signals (SIGTERM, SIGINT) are delivered straight to the Node process.

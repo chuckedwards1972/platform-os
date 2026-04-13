@@ -3,9 +3,29 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// Disable body parsing — this route needs no request body and should
+// respond as fast as possible. Keeping the runtime on Node (default)
+// avoids any Edge cold-start overhead while still being synchronous.
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Only allow GET (Railway's health probe uses GET).
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.setHeader('Allow', 'GET, HEAD');
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  // Prevent proxies or CDNs from caching the health response so every
+  // probe hits the live process.
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
   res.status(200).json({ status: 'ok' });
 }

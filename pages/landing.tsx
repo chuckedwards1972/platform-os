@@ -28,7 +28,12 @@ export default function LandingPage() {
             marginBottom: '20px',
             color: '#4ade80'
           }}>
-            🎉 HOPE Platform
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              POLR Hope Network
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Christ-Centered Recovery Ministry Platform with Modern Technology
+            </p>
           </h1>
           
           <p style={{ fontSize: '1.2rem', marginBottom: '30px', lineHeight: '1.6' }}>

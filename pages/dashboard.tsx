@@ -16,7 +16,15 @@ import {
   Database
 } from 'lucide-react';
 
-export default function DashboardPage() {
+export default function Dashboard() {
+  // Redirect to unified dashboard
+  if (typeof window !== 'undefined') {
+    window.location.href = '/dashboard-unified';
+    return null;
+  }
+  
+  return <div>Loading...</div>;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());

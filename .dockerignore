@@ -1,0 +1,34 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies (installed fresh in the Docker build)
+node_modules
+
+# Next.js build output (built fresh in the Docker build)
+.next
+out
+
+# Environment files — never bake secrets into the image
+.env
+.env.local
+.env.production
+.env*.local
+
+# Dev / editor artefacts
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test output
+coverage
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp

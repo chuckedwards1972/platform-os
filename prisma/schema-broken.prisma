@@ -1,0 +1,414 @@
+// Platform OS Database Schema - Single Source Data Schema (SSDS)
+// This is the authoritative data contract for the entire system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users with Zero Trust Security
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(VIEWER)
+  password  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  auditLogs    AuditLog[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+// User sessions for JWT tracking
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Core entities with SSDS enforcement
+model Member {
+  id            String        @id @default(cuid())
+  name          String
+  email         String?       @unique
+  phone         String?
+  campus        String?
+  status        MemberStatus  @default(INTAKE)
+  level         Int           @default(6)
+  stepNum       Int           @default(1)
+  sobrietyDate  DateTime?
+  joinDate      DateTime?
+  courtOrdered  Boolean       @default(false)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  donations Donation[]
+  housingResidents HousingResident[]
+  auditLogs AuditLog[]
+
+  @@map("members")
+}
+
+model Housing {
+  id        String   @id @default(cuid())
+  name      String
+  campus    String
+  houseId   String   @unique
+  address   String
+  city      String
+  state     String   @default("LA")
+  zip       String
+  capacity  Int      @default(6)
+  gender    Gender   @default(M)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  residents HousingResident[]
+  auditLogs AuditLog[]
+
+  @@map("housing")
+}
+
+model HousingResident {
+  id        String   @id @default(cuid())
+  housingId String
+  memberId  String?
+  moveInDate DateTime
+  moveOutDate DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  // Relations
+  housing Housing @relation(fields: [housingId], references: [id], onDelete: Cascade)
+  member  Member?  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([housingId, memberId, moveInDate])
+  @@map("housing_residents")
+}
+
+model Meeting {
+  id          String       @id @default(cuid())
+  name        String
+  campus      String
+  meetingType MeetingType  @default(AA)
+  day         WeekDay
+  startTime   String       // HH:MM format
+  endTime     String       // HH:MM format
+  location    String
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  auditLogs AuditLog[]
+
+  @@map("meetings")
+}
+
+model Donation {
+  id            String         @id @default(cuid())
+  donorName     String
+  donorEmail    String?
+  donorPhone    String?
+  amount        Float
+  type          DonationType   @default(ONE_TIME)
+  category      DonationCategory @default(GENERAL)
+  paymentMethod PaymentMethod  @default(CASH)
+  campus        String?
+  memberId      String?        // Link to member if applicable
+  notes         String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  member   Member    @relation(fields: [memberId], references: [id])
+  auditLogs AuditLog[]
+
+  @@map("donations")
+}
+
+model Employer {
+  id            String   @id @default(cuid())
+  name          String
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  address       String
+  city          String
+  state         String   @default("LA")
+  industry      String?
+  isActive      Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  auditLogs AuditLog[]
+
+  @@map("employers")
+}
+
+model Grant {
+  id          String     @id @default(cuid())
+  name        String
+  amount      Float
+  source      String
+  type        GrantType  @default(FEDERAL)
+  status      GrantStatus @default(PENDING)
+  awardedDate DateTime?
+  expiresDate DateTime?
+  notes       String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  auditLogs AuditLog[]
+
+  @@map("grants")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus   @default(TODO)
+  assignedTo  String?    // User ID
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  auditLogs AuditLog[]
+
+  @@map("tasks")
+}
+
+model Mission {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  status      MissionStatus @default(ACTIVE)
+  startDate   DateTime
+  endDate     DateTime?
+  objectives  String[]     // Array of objectives
+  metrics     Json?        // Mission metrics as JSON
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  auditLogs AuditLog[]
+
+  @@map("missions")
+}
+
+// System monitoring and audit
+model AuditLog {
+  id        String     @id @default(cuid())
+  action    AuditAction
+  entity    String     // Entity type (member, housing, etc.)
+  entityId  String     // Entity ID
+  userId    String     // Who performed action
+  oldValues Json?      // Previous state
+  newValues Json?      // New state
+  metadata  Json?      // Additional metadata
+  createdAt DateTime   @default(now())
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], name: "audit_logs_userId_fkey")
+  member Member? @relation(fields: [entityId], references: [id], name: "audit_logs_member_fkey")
+  housing Housing? @relation(fields: [entityId], references: [id], name: "audit_logs_housing_fkey")
+  meeting Meeting? @relation(fields: [entityId], references: [id], name: "audit_logs_meeting_fkey")
+  donation Donation? @relation(fields: [entityId], references: [id], name: "audit_logs_donation_fkey")
+  employer Employer? @relation(fields: [entityId], references: [id], name: "audit_logs_employer_fkey")
+  grant Grant? @relation(fields: [entityId], references: [id], name: "audit_logs_grant_fkey")
+  task Task? @relation(fields: [entityId], references: [id], name: "audit_logs_task_fkey")
+  mission Mission? @relation(fields: [entityId], references: [id], name: "audit_logs_mission_fkey")
+
+  @@map("audit_logs")
+}
+
+model SystemMetrics {
+  id            String   @id @default(cuid())
+  metricName    String
+  metricValue   Float
+  metricType    String   // count, rate, percentage, etc.
+  timestamp     DateTime @default(now())
+  metadata      Json?    // Additional context
+
+  @@index([metricName, timestamp])
+  @@map("system_metrics")
+}
+
+model Incident {
+  id          String       @id @default(cuid())
+  type        IncidentType
+  severity    IncidentSeverity
+  title       String
+  description String
+  status      IncidentStatus @default(OPEN)
+  detectedAt  DateTime     @default(now())
+  resolvedAt  DateTime?
+  metadata    Json?        // Incident details
+  actions     Json?        // Actions taken
+
+  @@index([type, severity, status])
+  @@map("incidents")
+}
+
+// Enums for type safety
+enum UserRole {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+enum MemberStatus {
+  INTAKE
+  ACTIVE
+  COMPLETED
+  INACTIVE
+  SUSPENDED
+}
+
+enum Gender {
+  M
+  F
+  OTHER
+}
+
+enum MeetingType {
+  AA
+  NA
+  RECOVERY
+  TREATMENT
+  SPIRITUAL
+  OTHER
+}
+
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum DonationType {
+  ONE_TIME
+  RECURRING
+  PLEDGE
+}
+
+enum DonationCategory {
+  GENERAL
+  HOUSING
+  TREATMENT
+  TRANSPORTATION
+  FOOD
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum GrantType {
+  FEDERAL
+  STATE
+  PRIVATE
+  FOUNDATION
+}
+
+enum GrantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum MissionStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  LOGIN
+  LOGOUT
+  SYSTEM
+}
+
+enum IncidentType {
+  DATA_DRIFT
+  PERFORMANCE
+  SECURITY
+  SYSTEM_ERROR
+  USER_ERROR
+  INTEGRATION
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  CLOSED
+}

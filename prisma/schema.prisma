@@ -1,0 +1,175 @@
+// Platform OS Database Schema - Minimal Version for Existing Database
+// This connects to your existing POLR database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users with Zero Trust Security
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("VIEWER")
+  password  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// User sessions for JWT tracking
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+// Core entities - matching your existing database
+model Member {
+  id            String   @id @default(cuid())
+  name          String
+  email         String?  @unique
+  phone         String?
+  campus        String?
+  status        String   @default("INTAKE")
+  level         Int      @default(6)
+  stepNum       Int      @default(1)
+  sobrietyDate  DateTime?
+  joinDate      DateTime?
+  courtOrdered  Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("members")
+}
+
+model Housing {
+  id        String   @id @default(cuid())
+  name      String
+  campus    String
+  houseId   String   @unique
+  address   String
+  city      String
+  state     String   @default("LA")
+  zip       String
+  capacity  Int      @default(6)
+  gender    String   @default("M")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("housing")
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  name        String
+  campus      String
+  meetingType String   @default("AA")
+  day         String
+  startTime   String   // HH:MM format
+  endTime     String   // HH:MM format
+  location    String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("meetings")
+}
+
+model Donation {
+  id            String   @id @default(cuid())
+  donorName     String
+  donorEmail    String?
+  donorPhone    String?
+  amount        Float
+  type          String   @default("ONE_TIME")
+  category      String   @default("GENERAL")
+  paymentMethod String   @default("CASH")
+  campus        String?
+  memberId      String?  // Link to member if applicable
+  notes         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("donations")
+}
+
+model Employer {
+  id            String   @id @default(cuid())
+  name          String
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  address       String
+  city          String
+  state         String   @default("LA")
+  industry      String?
+  isActive      Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("employers")
+}
+
+model Grant {
+  id          String   @id @default(cuid())
+  name        String
+  amount      Float
+  source      String
+  type        String   @default("FEDERAL")
+  status      String   @default("PENDING")
+  awardedDate DateTime?
+  expiresDate DateTime?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("grants")
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  priority    String   @default("MEDIUM")
+  status      String   @default("TODO")
+  assignedTo  String?  // User ID
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tasks")
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("ACTIVE")
+  startDate   DateTime
+  endDate     DateTime?
+  objectives  String   // JSON string
+  metrics     String   // JSON string
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("missions")
+}

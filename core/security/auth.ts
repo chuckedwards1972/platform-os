@@ -19,18 +19,16 @@ export interface JWTPayload {
 
 // Generate JWT token
 export function generateToken(user: { id: string; email: string; role: string }): string {
-  const secret = process.env.JWT_SECRET || 'fallback-secret';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const payload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role
+  };
   
-  return jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    },
-    secret as string,
-    { expiresIn: expiresIn as string }
-  );
+  const secret = JWT_SECRET;
+  const options = { expiresIn: JWT_EXPIRES_IN };
+  
+  return jwt.sign(payload, secret, options);
 }
 
 // Verify JWT token

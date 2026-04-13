@@ -2,6 +2,7 @@
 // Cognitive Interface (PCI) - Real-time system visibility
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { format } from 'date-fns';
 import { 
   Users, 
@@ -57,11 +58,13 @@ interface SystemMetrics {
 }
 
 export default function PlatformCommandCenter() {
+  const router = useRouter();
   const [platformData, setPlatformData] = useState<PlatformData | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [redirecting, setRedirecting] = useState(false);
 
   // Load platform truth from database
   const loadPlatformTruth = async () => {
@@ -115,8 +118,20 @@ export default function PlatformCommandCenter() {
     }
   };
 
-  // Auto-refresh every 30 seconds
+  // Check for auth token on mount; redirect to login if absent
   useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setRedirecting(true);
+      router.push('/api/auth/login');
+    }
+  }, []);
+
+  // Auto-refresh every 30 seconds (only when authenticated)
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
     loadPlatformTruth();
     loadSystemMetrics();
 
@@ -195,6 +210,17 @@ export default function PlatformCommandCenter() {
       description: 'Active missions'
     }
   ];
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

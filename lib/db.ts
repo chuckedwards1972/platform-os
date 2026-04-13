@@ -35,8 +35,7 @@ export async function getDatabaseMetrics() {
       grantCount,
       taskCount,
       missionCount,
-      userCount,
-      incidentCount
+      userCount
     ] = await Promise.all([
       db.member.count({ where: { isActive: true } }),
       db.housing.count({ where: { isActive: true } }),
@@ -46,8 +45,7 @@ export async function getDatabaseMetrics() {
       db.grant.count({ where: { isActive: true } }),
       db.task.count(),
       db.mission.count({ where: { isActive: true } }),
-      db.user.count({ where: { isActive: true } }),
-      db.incident.count({ where: { status: 'OPEN' } })
+      db.user.count({ where: { isActive: true } })
     ]);
 
     return {
@@ -60,7 +58,6 @@ export async function getDatabaseMetrics() {
       tasks: taskCount,
       missions: missionCount,
       users: userCount,
-      openIncidents: incidentCount,
       timestamp: new Date()
     };
   } catch (error) {
@@ -88,7 +85,6 @@ export async function getPlatformTruth() {
       }),
       db.housing.findMany({ 
         where: { isActive: true },
-        include: { residents: { include: { member: true } } },
         orderBy: { createdAt: 'desc' }
       }),
       db.donation.findMany({ 
